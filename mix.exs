@@ -66,7 +66,20 @@ defmodule SaasStarter.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      # Auth
+      {:ueberauth, "~> 0.10"},
+      {:ueberauth_google, "~> 0.12"},
+      # Email transport (SMTP) for prod. Dev uses Swoosh.Adapters.Local,
+      # test uses Swoosh.Adapters.Test — both bundled with :swoosh.
+      {:gen_smtp, "~> 1.2"},
+      # Billing — declared only; no runtime wiring in v0.1. See
+      # lib/saas_starter/billing.ex for the stub and
+      # RECIPES/31-add-stripe-billing.md for activation.
+      {:stripity_stripe, "~> 3.2"},
+      # LiveView session replay. Captures events + assigns (not DOM) so it
+      # complements, doesn't replace, the product_events analytics table.
+      {:phoenix_replay, "~> 0.1"}
     ]
   end
 
