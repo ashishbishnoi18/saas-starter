@@ -57,14 +57,14 @@ config :ueberauth, Ueberauth.Strategy.Google.OAuth,
   client_id: System.get_env("GOOGLE_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
-# Phoenix Replay — Ecto storage, shipped sanitizer scrubs PII keys.
-# Storage lives in the app's primary repo. See
-# lib/saas_starter/replay_sanitizer.ex.
+# Phoenix Replay — Ecto storage in the app's primary repo, sanitizer
+# scrubs PII keys before serialization. See RECIPES/99-admin-replay.md
+# (future) for a viewer LiveView; in v0.1 recordings just accumulate.
 config :phoenix_replay,
   storage: PhoenixReplay.Storage.Ecto,
-  repo: SaasStarter.Repo,
+  storage_opts: [repo: SaasStarter.Repo, format: :etf],
   sanitizer: SaasStarter.ReplaySanitizer,
-  max_events_per_recording: 1000
+  max_events: 10_000
 
 # Configure esbuild (the version is required)
 config :esbuild,
