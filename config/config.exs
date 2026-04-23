@@ -44,6 +44,28 @@ config :saas_starter, SaasStarterWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :saas_starter, SaasStarter.Mailer, adapter: Swoosh.Adapters.Local
 
+# Ueberauth — Google OAuth only in v0.1. Client id/secret come from env
+# (see config/runtime.exs). Add more providers by listing them in
+# `providers:` and configuring their strategy here. See
+# RECIPES/12-add-oauth-provider.md.
+config :ueberauth, Ueberauth,
+  providers: [
+    google: {Ueberauth.Strategy.Google, [default_scope: "email profile"]}
+  ]
+
+config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+  client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+
+# Phoenix Replay — Ecto storage, shipped sanitizer scrubs PII keys.
+# Storage lives in the app's primary repo. See
+# lib/saas_starter/replay_sanitizer.ex.
+config :phoenix_replay,
+  storage: PhoenixReplay.Storage.Ecto,
+  repo: SaasStarter.Repo,
+  sanitizer: SaasStarter.ReplaySanitizer,
+  max_events_per_recording: 1000
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",

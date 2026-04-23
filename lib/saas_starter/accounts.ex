@@ -80,6 +80,48 @@ defmodule SaasStarter.Accounts do
     |> Repo.insert()
   end
 
+  ## OAuth
+
+  @doc """
+  Finds-or-creates a user from an OAuth provider's verified identity.
+
+  Accepts `%{email: ..., google_sub: ...}`. Matching priority:
+
+    1. If a user exists with the given `google_sub`, return them (update
+       `email` if it has changed on the provider side).
+    2. If a user exists with the given `email` (magic-link account),
+       attach `google_sub` to that row and return the user.
+    3. Otherwise create a new user with both fields set, auto-confirmed.
+
+  Returns `{:ok, user}` or `{:error, changeset}`.
+  """
+  def upsert_user_from_oauth(%{email: email, google_sub: sub} = attrs)
+      when is_binary(email) and is_binary(sub) do
+    case Repo.get_by(User, google_sub: sub) do
+      %User{} = user ->
+        if user.email == email do
+          {:ok, user}
+        else
+          user
+          |> User.oauth_changeset(attrs)
+          |> Repo.update()
+        end
+
+      nil ->
+        case Repo.get_by(User, email: email) do
+          %User{} = user ->
+            user
+            |> User.oauth_changeset(attrs)
+            |> Repo.update()
+
+          nil ->
+            %User{}
+            |> User.oauth_changeset(attrs)
+            |> Repo.insert()
+        end
+    end
+  end
+
   ## Settings
 
   @doc """

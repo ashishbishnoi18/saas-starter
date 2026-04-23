@@ -72,4 +72,12 @@ defmodule SaasStarterWeb.Router do
     post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
   end
+
+  ## OAuth (Ueberauth) — Google. See lib/saas_starter_web/controllers/oauth_controller.ex.
+  scope "/auth", SaasStarterWeb do
+    pipe_through :browser
+
+    get "/:provider", OAuthController, :request
+    get "/:provider/callback", OAuthController, :callback
+  end
 end

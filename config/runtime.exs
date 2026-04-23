@@ -100,21 +100,29 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # ## Configuring the mailer
-  #
-  # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :saas_starter, SaasStarter.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  # SMTP mailer for magic-link emails. Works with any provider (SES,
+  # Postmark, SendGrid, Resend, etc.) that exposes SMTP credentials.
+  config :saas_starter, SaasStarter.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_HOST") || raise("SMTP_HOST is missing"),
+    port: String.to_integer(System.get_env("SMTP_PORT") || "587"),
+    username: System.get_env("SMTP_USERNAME") || raise("SMTP_USERNAME is missing"),
+    password: System.get_env("SMTP_PASSWORD") || raise("SMTP_PASSWORD is missing"),
+    tls: :always,
+    auth: :always,
+    ssl: false,
+    retries: 2
 end
+
+# Google OAuth credentials. Read at runtime (not compile time) so a single
+# release artifact can be deployed to any environment.
+if config_env() != :test do
+  config :ueberauth, Ueberauth.Strategy.Google.OAuth,
+    client_id: System.get_env("GOOGLE_CLIENT_ID"),
+    client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
+end
+
+# The email address used as the `From:` header on outbound mail (magic
+# links, confirmations, etc.). Safe to default in dev.
+config :saas_starter, :from_email,
+  System.get_env("FROM_EMAIL") || "no-reply@localhost"

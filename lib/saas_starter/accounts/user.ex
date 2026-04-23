@@ -8,6 +8,10 @@ defmodule SaasStarter.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+    # Google OAuth subject identifier (the stable `sub` claim). Nullable —
+    # only set for users who signed in via Google. A single user may have
+    # both a google_sub and a magic-link tokens history.
+    field :google_sub, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -112,6 +116,33 @@ defmodule SaasStarter.Accounts.User do
   def confirm_changeset(user) do
     now = DateTime.utc_now(:second)
     change(user, confirmed_at: now)
+  end
+
+  @doc """
+  Changeset for creating/updating a user from an OAuth provider callback.
+
+  Google is the only provider wired in v0.1. The `sub` claim is stored in
+  `google_sub`; email is trusted because Google's callback only returns
+  verified emails. The user is auto-confirmed — OAuth providers do the
+  email-verification step for us.
+  """
+  def oauth_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :google_sub])
+    |> validate_required([:email, :google_sub])
+    |> validate_format(:email, ~r/^[^@,;\s]+@[^@,;\s]+$/)
+    |> validate_length(:email, max: 160)
+    |> unique_constraint(:email)
+    |> unique_constraint(:google_sub)
+    |> put_confirmed_now()
+  end
+
+  defp put_confirmed_now(changeset) do
+    if get_field(changeset, :confirmed_at) do
+      changeset
+    else
+      put_change(changeset, :confirmed_at, DateTime.utc_now(:second))
+    end
   end
 
   @doc """
