@@ -82,3 +82,14 @@ at runtime — there's no Ecto repo configured for it. Query it from the shell.
 
 `./kb-init` is idempotent. Delete `knowledge.db` first if you want to start
 from an empty schema.
+
+## Commit cadence
+
+Every cohesive change is one commit. Use `scripts/ai-commit.sh "<message>"`
+which runs `mix format && mix compile --warnings-as-errors && mix test`
+before it lets the commit through. If any gate fails, nothing is committed
+— fix forward, re-run.
+
+**Never** commit directly with `git commit` unless you've already run the
+three checks manually. The log is a walkthrough for the next AI; keep it
+green.
