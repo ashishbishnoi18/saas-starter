@@ -1,4 +1,15 @@
 defmodule SaasStarterWeb.UserLive.Login do
+  @moduledoc """
+  Login page. Two surfaces share one session system
+  (see SaasStarterWeb.UserAuth):
+
+    * Google OAuth → `GET /auth/google` (handled by Ueberauth)
+    * Magic link → submit email, receive a one-time login link
+
+  Password login was intentionally removed in v0.1. The `hashed_password`
+  column is kept nullable in case a future project wants to re-enable it
+  — see RECIPES/ for adding a password flow back in.
+  """
   use SaasStarterWeb, :live_view
 
   alias SaasStarter.Accounts
@@ -7,7 +18,7 @@ defmodule SaasStarterWeb.UserLive.Login do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4">
+      <div class="mx-auto max-w-sm space-y-6">
         <div class="text-center">
           <.header>
             <p>Log in</p>
@@ -15,11 +26,7 @@ defmodule SaasStarterWeb.UserLive.Login do
               <%= if @current_scope do %>
                 You need to reauthenticate to perform sensitive actions on your account.
               <% else %>
-                Don't have an account? <.link
-                  navigate={~p"/users/register"}
-                  class="font-semibold text-brand hover:underline"
-                  phx-no-format
-                >Sign up</.link> for an account now.
+                New here? Enter your email below — we'll send you a one-time link.
               <% end %>
             </:subtitle>
           </.header>
@@ -34,6 +41,16 @@ defmodule SaasStarterWeb.UserLive.Login do
             </p>
           </div>
         </div>
+
+        <.link
+          id="google-login"
+          href={~p"/auth/google"}
+          class="btn btn-primary w-full"
+        >
+          Continue with Google
+        </.link>
+
+        <div class="divider">or</div>
 
         <.form
           :let={f}
@@ -53,41 +70,7 @@ defmodule SaasStarterWeb.UserLive.Login do
             phx-mounted={JS.focus()}
           />
           <.button class="btn btn-primary w-full">
-            Log in with email <span aria-hidden="true">→</span>
-          </.button>
-        </.form>
-
-        <div class="divider">or</div>
-
-        <.form
-          :let={f}
-          for={@form}
-          id="login_form_password"
-          action={~p"/users/log-in"}
-          phx-submit="submit_password"
-          phx-trigger-action={@trigger_submit}
-        >
-          <.input
-            readonly={!!@current_scope}
-            field={f[:email]}
-            type="email"
-            label="Email"
-            autocomplete="username"
-            spellcheck="false"
-            required
-          />
-          <.input
-            field={@form[:password]}
-            type="password"
-            label="Password"
-            autocomplete="current-password"
-            spellcheck="false"
-          />
-          <.button class="btn btn-primary w-full" name={@form[:remember_me].name} value="true">
-            Log in and stay logged in <span aria-hidden="true">→</span>
-          </.button>
-          <.button class="btn btn-primary btn-soft w-full mt-2">
-            Log in only this time
+            Email me a login link <span aria-hidden="true">→</span>
           </.button>
         </.form>
       </div>
@@ -103,14 +86,10 @@ defmodule SaasStarterWeb.UserLive.Login do
 
     form = to_form(%{"email" => email}, as: "user")
 
-    {:ok, assign(socket, form: form, trigger_submit: false)}
+    {:ok, assign(socket, form: form)}
   end
 
   @impl true
-  def handle_event("submit_password", _params, socket) do
-    {:noreply, assign(socket, :trigger_submit, true)}
-  end
-
   def handle_event("submit_magic", %{"user" => %{"email" => email}}, socket) do
     if user = Accounts.get_user_by_email(email) do
       Accounts.deliver_login_instructions(

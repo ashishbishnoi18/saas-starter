@@ -20,7 +20,10 @@ defmodule SaasStarterWeb.Router do
   scope "/", SaasStarterWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live_session :public,
+      on_mount: [{SaasStarterWeb.UserAuth, :mount_current_scope}, PhoenixReplay.Recorder] do
+      live "/", HomeLive, :home
+    end
   end
 
   # Other scopes may use custom stacks.
@@ -52,6 +55,7 @@ defmodule SaasStarterWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{SaasStarterWeb.UserAuth, :require_authenticated}, PhoenixReplay.Recorder] do
+      live "/dashboard", DashboardLive, :index
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
     end

@@ -5,12 +5,19 @@ defmodule SaasStarterWeb.UserLive.LoginTest do
   import SaasStarter.AccountsFixtures
 
   describe "login page" do
-    test "renders login page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/users/log-in")
+    test "renders both Google and magic-link surfaces", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/users/log-in")
 
-      assert html =~ "Log in"
-      assert html =~ "Register"
-      assert html =~ "Log in with email"
+      assert has_element?(view, "#google-login")
+      assert has_element?(view, "#login_form_magic")
+      refute has_element?(view, "#login_form_password")
+    end
+
+    test "Google button links to /auth/google", %{conn: conn} do
+      {:ok, view, html} = live(conn, ~p"/users/log-in")
+
+      assert has_element?(view, ~s|a#google-login[href="/auth/google"]|)
+      assert html =~ "Continue with Google"
     end
   end
 
@@ -31,7 +38,7 @@ defmodule SaasStarterWeb.UserLive.LoginTest do
                "login"
     end
 
-    test "does not disclose if user is registered", %{conn: conn} do
+    test "does not disclose whether the email is registered", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/log-in")
 
       {:ok, _lv, html} =
@@ -40,52 +47,6 @@ defmodule SaasStarterWeb.UserLive.LoginTest do
         |> follow_redirect(conn, ~p"/users/log-in")
 
       assert html =~ "If your email is in our system"
-    end
-  end
-
-  describe "user login - password" do
-    test "redirects if user logs in with valid credentials", %{conn: conn} do
-      user = user_fixture() |> set_password()
-
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      form =
-        form(lv, "#login_form_password",
-          user: %{email: user.email, password: valid_user_password(), remember_me: true}
-        )
-
-      conn = submit_form(form, conn)
-
-      assert redirected_to(conn) == ~p"/"
-    end
-
-    test "redirects to login page with a flash error if credentials are invalid", %{
-      conn: conn
-    } do
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      form =
-        form(lv, "#login_form_password", user: %{email: "test@email.com", password: "123456"})
-
-      render_submit(form, %{user: %{remember_me: true}})
-
-      conn = follow_trigger_action(form, conn)
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
-      assert redirected_to(conn) == ~p"/users/log-in"
-    end
-  end
-
-  describe "login navigation" do
-    test "redirects to registration page when the Register button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/users/log-in")
-
-      {:ok, _login_live, login_html} =
-        lv
-        |> element("main a", "Sign up")
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
-
-      assert login_html =~ "Register"
     end
   end
 
@@ -99,8 +60,6 @@ defmodule SaasStarterWeb.UserLive.LoginTest do
       {:ok, _lv, html} = live(conn, ~p"/users/log-in")
 
       assert html =~ "You need to reauthenticate"
-      refute html =~ "Register"
-      assert html =~ "Log in with email"
 
       assert html =~
                ~s(<input type="email" name="user[email]" id="login_form_magic_email" value="#{user.email}")
