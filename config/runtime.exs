@@ -124,5 +124,4 @@ end
 
 # The email address used as the `From:` header on outbound mail (magic
 # links, confirmations, etc.). Safe to default in dev.
-config :saas_starter, :from_email,
-  System.get_env("FROM_EMAIL") || "no-reply@localhost"
+config :saas_starter, :from_email, System.get_env("FROM_EMAIL") || "no-reply@localhost"
