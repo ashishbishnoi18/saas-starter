@@ -76,7 +76,8 @@ defmodule SaasStarter.StorageTest do
       # assert the telemetry span is emitted regardless of outcome.
       _ = Storage.delete("does/not/matter.png")
 
-      assert_receive {:storage_event, %{duration_ms: ms}, %{op: :delete, key: key, status: status}},
+      assert_receive {:storage_event, %{duration_ms: ms},
+                      %{op: :delete, key: key, status: status}},
                      2_000
 
       assert is_integer(ms) and ms >= 0
