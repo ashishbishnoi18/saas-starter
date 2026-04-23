@@ -100,8 +100,15 @@ if config_env() == :prod do
   #
   # Check `Plug.SSL` for all available options in `force_ssl`.
 
-  # SMTP mailer for magic-link emails. Works with any provider (SES,
-  # Postmark, SendGrid, Resend, etc.) that exposes SMTP credentials.
+  # Mailer — Amazon SES via SMTP (see RECIPES/60-setup-ses.md for domain
+  # verification + out-of-sandbox workflow). Any SMTP provider works;
+  # SES is the declared default.
+  #
+  # Expected env:
+  #   SMTP_HOST     e.g. email-smtp.us-east-1.amazonaws.com
+  #   SMTP_PORT     587 (STARTTLS) — SES also supports 465 (TLS) and 2587
+  #   SMTP_USERNAME generated via IAM "Create SMTP credentials"
+  #   SMTP_PASSWORD paired SMTP password
   config :saas_starter, SaasStarter.Mailer,
     adapter: Swoosh.Adapters.SMTP,
     relay: System.get_env("SMTP_HOST") || raise("SMTP_HOST is missing"),
