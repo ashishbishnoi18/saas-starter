@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# kb-init — bootstrap a SQLite knowledge base for AI agents working on this repo.
+#
+# Pattern adapted from github.com/ashishbishnoi18/kb-init. Creates knowledge.db
+# with 10 tables describing the project's architecture, configuration, and
+# discoveries — metadata queried by AI sessions to understand what exists and
+# what's been learned.
+#
+# Idempotent: run it multiple times; CREATE TABLE IF NOT EXISTS keeps existing
+# data intact. To start over, delete knowledge.db first.
+#
+# Usage:  ./kb-init
+set -euo pipefail
+
+KB_DB="${KB_DB:-knowledge.db}"
+
+if ! command -v sqlite3 >/dev/null; then
+  echo "error: sqlite3 CLI not found. Install it before running kb-init." >&2
+  exit 1
+fi
+
+sqlite3 "$KB_DB" <<'SQL'
+-- Components: services, modules, databases, tools, cron jobs, scripts.
+CREATE TABLE IF NOT EXISTS components (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    type            TEXT NOT NULL, -- service, module, database, tool, cron_job, script
+    description     TEXT,
+    server          TEXT,
+    server_ip       TEXT,
+    path            TEXT,
+    repo_url        TEXT,
+    language        TEXT,
+    config_location TEXT,
+    health_check    TEXT,
+    logs_location   TEXT,
+    updated_at      TEXT DEFAULT (datetime('now'))
+);
+
+-- Dependencies between components.
+CREATE TABLE IF NOT EXISTS dependencies (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_component  TEXT NOT NULL,
+    to_component    TEXT NOT NULL,
+    type            TEXT NOT NULL, -- calls, reads_from, writes_to, imports, embeds
+    protocol        TEXT,          -- http, grpc, sqlite, stdin_stdout, go_import
+    description     TEXT,
+    UNIQUE(from_component, to_component, type)
+);
+
+-- Environment variables, file-based config, feature flags.
+CREATE TABLE IF NOT EXISTS config (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT NOT NULL,
+    key             TEXT NOT NULL,
+    value           TEXT,
+    env_var         TEXT,
+    file_path       TEXT,
+    description     TEXT,
+    sensitive       BOOLEAN DEFAULT 0,
+    updated_at      TEXT DEFAULT (datetime('now')),
+    UNIQUE(component_id, key)
+);
+
+-- API endpoints exposed or consumed.
+CREATE TABLE IF NOT EXISTS endpoints (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT NOT NULL,
+    method          TEXT,
+    path            TEXT,
+    capability      TEXT,
+    description     TEXT,
+    request_shape   TEXT,
+    response_shape  TEXT,
+    auth_required   BOOLEAN DEFAULT 1,
+    rate_limited    BOOLEAN DEFAULT 0,
+    quota_info      TEXT,
+    notes           TEXT,
+    UNIQUE(component_id, method, path)
+);
+
+-- Database table documentation.
+CREATE TABLE IF NOT EXISTS schema_docs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT NOT NULL,
+    database_file   TEXT,
+    table_name      TEXT NOT NULL,
+    description     TEXT,
+    columns_json    TEXT,
+    relationships   TEXT,
+    row_count_hint  TEXT,
+    updated_at      TEXT DEFAULT (datetime('now')),
+    UNIQUE(component_id, table_name)
+);
+
+-- Append-only discovery log. Read-before-guess.
+CREATE TABLE IF NOT EXISTS insights (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT,
+    topic           TEXT NOT NULL,
+    finding         TEXT NOT NULL,
+    evidence        TEXT,
+    confidence      TEXT DEFAULT 'confirmed', -- confirmed, suspected, outdated, disproven
+    discovered_at   TEXT DEFAULT (date('now')),
+    agent_session   TEXT,
+    tags            TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_insights_topic      ON insights(topic);
+CREATE INDEX IF NOT EXISTS idx_insights_component  ON insights(component_id);
+CREATE INDEX IF NOT EXISTS idx_insights_confidence ON insights(confidence);
+
+-- Credential pointers. Never store the actual value.
+CREATE TABLE IF NOT EXISTS secrets (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    platform         TEXT NOT NULL,
+    label            TEXT NOT NULL,
+    storage_location TEXT NOT NULL,
+    access_method    TEXT,
+    description      TEXT,
+    UNIQUE(platform, label)
+);
+
+-- Operational procedures (commands, schedules, prerequisites).
+CREATE TABLE IF NOT EXISTS runbooks (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT,
+    task            TEXT NOT NULL,
+    trigger         TEXT, -- manual, cron, on_error, on_deploy
+    command         TEXT,
+    schedule        TEXT,
+    prerequisites   TEXT,
+    notes           TEXT,
+    UNIQUE(component_id, task)
+);
+
+-- Business rules, algorithms, domain logic. Why the code does what it does.
+CREATE TABLE IF NOT EXISTS business_logic (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT,
+    domain          TEXT NOT NULL, -- enumeration, quota_management, data_normalization, etc.
+    rule            TEXT NOT NULL,
+    rationale       TEXT,
+    implemented_in  TEXT,
+    updated_at      TEXT DEFAULT (datetime('now')),
+    UNIQUE(component_id, domain, rule)
+);
+
+-- Audit log of changes made by agents (human or AI).
+CREATE TABLE IF NOT EXISTS changelog (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    component_id    TEXT,
+    action          TEXT NOT NULL, -- added, modified, removed, discovered, fixed
+    what            TEXT NOT NULL,
+    details         TEXT,
+    files_changed   TEXT,
+    agent_session   TEXT,
+    created_at      TEXT DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_changelog_component ON changelog(component_id);
+CREATE INDEX IF NOT EXISTS idx_changelog_created   ON changelog(created_at);
+
+-- Secret-prevention: refuse obvious secret-looking values in config.
+CREATE TRIGGER IF NOT EXISTS config_block_secret_insert
+BEFORE INSERT ON config
+WHEN NEW.sensitive = 1 AND (
+    length(NEW.value) > 50
+    OR NEW.value LIKE 'sk\_%' ESCAPE '\'
+    OR NEW.value LIKE 'postgres://%'
+    OR NEW.value LIKE 'mysql://%'
+)
+BEGIN
+  SELECT RAISE(ABORT, 'config.value looks like a secret — store pointer in storage_location instead');
+END;
+
+CREATE TRIGGER IF NOT EXISTS config_block_secret_update
+BEFORE UPDATE ON config
+WHEN NEW.sensitive = 1 AND (
+    length(NEW.value) > 50
+    OR NEW.value LIKE 'sk\_%' ESCAPE '\'
+    OR NEW.value LIKE 'postgres://%'
+    OR NEW.value LIKE 'mysql://%'
+)
+BEGIN
+  SELECT RAISE(ABORT, 'config.value looks like a secret — store pointer in storage_location instead');
+END;
+SQL
+
+echo "knowledge.db ready at $KB_DB"
+echo "next: read AGENT.md to learn the conventions, then populate tables as you discover them"
