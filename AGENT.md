@@ -4,8 +4,11 @@ The project ships with a SQLite knowledge base at `knowledge.db` (created by
 `./kb-init`). It's a structured notebook about this codebase — every AI
 session that works here should **read it first, write to it on exit**.
 
-Phoenix's coding-style rules live in `AGENTS.md` (plural). This file is
-specifically about the knowledge-base workflow.
+Phoenix's coding-style rules live in `AGENTS.md` (plural). The stack is
+declared in `STACK.md` — treat it as binding. Project-specific conventions
+(forbidden patterns, decisions) live in `CONVENTIONS.md`. Task-shaped how-tos
+live in `RECIPES/`. This file is specifically about the knowledge-base
+workflow.
 
 ## Before you start a task
 

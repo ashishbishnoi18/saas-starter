@@ -52,10 +52,11 @@ Dev skips Google + SMTP by default — magic-link emails appear in
 
 Read these in order:
 
-1. `AGENTS.md` — Phoenix/Elixir coding conventions (ships with Phoenix 1.8)
-2. `AGENT.md` — knowledge-base protocol for this repo
-3. `CONVENTIONS.md` — project-specific hard rules and decisions
-4. `RECIPES/*.md` — task-shaped how-to guides
+1. `STACK.md` — the canonical stack declaration (DB, auth, hosting, etc.)
+2. `AGENTS.md` — Phoenix/Elixir coding conventions (ships with Phoenix 1.8)
+3. `AGENT.md` — knowledge-base protocol for this repo
+4. `CONVENTIONS.md` — project-specific hard rules and decisions
+5. `RECIPES/*.md` — task-shaped how-to guides
 
 ## Running tests
 
