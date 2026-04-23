@@ -66,6 +66,16 @@ config :phoenix_replay,
   sanitizer: SaasStarter.ReplaySanitizer,
   max_events: 10_000
 
+# ExAws is pointed at Cloudflare R2, not AWS S3. R2 is S3-compatible, so
+# we override the endpoint. R2 requires region "auto". Bucket and HTTP
+# credentials are loaded at runtime (config/runtime.exs) from env vars.
+# SaasStarter.Storage emits its own telemetry span per call so outbound
+# R2 traffic is observable even though we use hackney (ExAws default)
+# rather than our Req wrapper.
+config :ex_aws,
+  json_codec: Jason,
+  region: "auto"
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.25.4",

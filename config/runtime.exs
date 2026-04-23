@@ -141,3 +141,25 @@ config :saas_starter,
        (System.get_env("ADMIN_EMAILS") || "")
        |> String.split(",", trim: true)
        |> Enum.map(&String.trim/1)
+
+# Cloudflare R2 credentials + bucket + public CDN base URL.
+# R2_ACCOUNT_ID is the 32-char hex identifier from your Cloudflare dash.
+# The endpoint host embeds it as <account>.r2.cloudflarestorage.com.
+if config_env() != :test do
+  r2_account_id = System.get_env("R2_ACCOUNT_ID")
+
+  config :ex_aws,
+    access_key_id: System.get_env("R2_ACCESS_KEY_ID"),
+    secret_access_key: System.get_env("R2_SECRET_ACCESS_KEY")
+
+  if r2_account_id do
+    config :ex_aws, :s3,
+      scheme: "https://",
+      host: "#{r2_account_id}.r2.cloudflarestorage.com",
+      region: "auto"
+  end
+end
+
+config :saas_starter, :storage,
+  bucket: System.get_env("R2_BUCKET") || "saas-starter-dev",
+  public_cdn_base_url: System.get_env("PUBLIC_CDN_BASE_URL")

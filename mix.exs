@@ -79,7 +79,13 @@ defmodule SaasStarter.MixProject do
       {:stripity_stripe, "~> 3.2"},
       # LiveView session replay. Captures events + assigns (not DOM) so it
       # complements, doesn't replace, the product_events analytics table.
-      {:phoenix_replay, "~> 0.1"}
+      {:phoenix_replay, "~> 0.1"},
+      # Cloudflare R2 object storage via the S3-compatible API. ex_aws_s3
+      # is used for its v4 signer + presigned URL support; the endpoint
+      # is configured to Cloudflare's R2 in config/config.exs.
+      {:ex_aws, "~> 2.6"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:sweet_xml, "~> 0.7"}
     ]
   end
 
