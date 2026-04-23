@@ -132,3 +132,12 @@ end
 # The email address used as the `From:` header on outbound mail (magic
 # links, confirmations, etc.). Safe to default in dev.
 config :saas_starter, :from_email, System.get_env("FROM_EMAIL") || "no-reply@localhost"
+
+# Admin allowlist (used by SaasStarterWeb.Plugs.AdminGate). Empty by
+# default so no one can reach /admin until you add yourself.
+# Example: ADMIN_EMAILS=alice@example.com,bob@example.com
+config :saas_starter,
+       :admin_emails,
+       (System.get_env("ADMIN_EMAILS") || "")
+       |> String.split(",", trim: true)
+       |> Enum.map(&String.trim/1)

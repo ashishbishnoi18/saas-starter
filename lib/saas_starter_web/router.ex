@@ -84,4 +84,32 @@ defmodule SaasStarterWeb.Router do
     get "/:provider", OAuthController, :request
     get "/:provider/callback", OAuthController, :callback
   end
+
+  ## Admin routes — gated by Tailscale + email allowlist.
+  ##
+  ## Hang actual admin pages off the :admin live_session below. The
+  ## starter ships the gate primitive only; each app writes its own
+  ## admin surface (user management, impersonation, billing overrides,
+  ## etc.) since those vary per-app.
+  pipeline :admin do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_root_layout, html: {SaasStarterWeb.Layouts, :root}
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug :fetch_current_scope_for_user
+    plug SaasStarterWeb.Plugs.AdminGate
+  end
+
+  scope "/admin", SaasStarterWeb.Admin do
+    pipe_through :admin
+
+    live_session :admin,
+      on_mount: [{SaasStarterWeb.UserAuth, :require_authenticated}, PhoenixReplay.Recorder] do
+      # Add your app-specific admin pages here, e.g.:
+      #   live "/", DashboardLive, :index
+      #   live "/users", UsersLive, :index
+    end
+  end
 end
