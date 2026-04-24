@@ -57,12 +57,19 @@ config :ueberauth, Ueberauth.Strategy.Google.OAuth,
   client_id: System.get_env("GOOGLE_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_CLIENT_SECRET")
 
-# Phoenix Replay — Ecto storage in the app's primary repo, sanitizer
-# scrubs PII keys before serialization. See RECIPES/99-admin-replay.md
-# (future) for a viewer LiveView; in v0.1 recordings just accumulate.
+# Phoenix Replay — File storage to `priv/replay_recordings/`. Ecto
+# storage would keep recordings in Postgres, but phoenix_replay v0.1.1
+# has an upstream bug: its Ecto backend is guarded by a
+# `Code.ensure_loaded?(Ecto)` conditional and the package doesn't list
+# `:ecto` as its own dep, so the backend module gets skipped at compile
+# time. File backend sidesteps this. Recordings land on disk and are
+# captured by scripts/backup.sh if you extend it with that path.
+#
+# Swap back to Ecto storage once upstream (dannote/phoenix_replay)
+# fixes the dep declaration.
 config :phoenix_replay,
-  storage: PhoenixReplay.Storage.Ecto,
-  storage_opts: [repo: SaasStarter.Repo, format: :etf],
+  storage: PhoenixReplay.Storage.File,
+  storage_opts: [path: "priv/replay_recordings", format: :etf],
   sanitizer: SaasStarter.ReplaySanitizer,
   max_events: 10_000
 
