@@ -37,3 +37,8 @@ npm-debug.log
 
 /priv/replay_recordings/
 .env
+
+# UI theme bundle and choice marker (installed by scripts/install-theme.sh
+# per-fork; re-run on every fresh clone).
+/priv/static/themes/
+/.theme

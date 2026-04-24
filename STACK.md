@@ -20,6 +20,7 @@ open a discussion with the human — don't silently swap an item.
 | CDN / media storage | **Cloudflare** | R2 for object storage (S3-compatible API), Cloudflare in front as CDN. `SaasStarter.Storage` wrapper covers upload/signed-URL patterns. |
 | SMTP | **Amazon SES** | Via SES SMTP endpoints, configured through Swoosh's SMTP adapter. Credentials in env vars. |
 | Version control | **GitHub** | `gh` CLI for repo operations. AI agent commits automatically after each cohesive change (one commit per logical unit). |
+| UI design kit | **DevKit** *or* **Neobrutalism UI Kit** (user's choice) | From [github.com/ashishbishnoi18/ui-design-kits](https://github.com/ashishbishnoi18/ui-design-kits). Pure CSS + vanilla JS, zero build deps. Installed per-fork via `scripts/install-theme.sh <devkit\|neobrutalism>`. See `RECIPES/70-install-ui-theme.md`. |
 
 ## What the starter writes vs what each app writes
 

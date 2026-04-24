@@ -104,6 +104,7 @@ You get these for free the moment you clone and run `mix setup`:
 | **AI-commit script** | `scripts/ai-commit.sh` — runs format + compile + test before every commit; blocks broken commits |
 | **Knowledge base** | `knowledge.db` — SQLite notebook for AI agents to record findings across sessions |
 | **CI workflow** | `.github/workflows/ci.yml` — format check, warnings-as-errors compile, test |
+| **UI theme installer** | `scripts/install-theme.sh <devkit\|neobrutalism>` — fetches one of two curated design kits from [ui-design-kits](https://github.com/ashishbishnoi18/ui-design-kits) and drops the bundle into `priv/static/themes/`. See [`RECIPES/70-install-ui-theme.md`](RECIPES/70-install-ui-theme.md). |
 
 ### 2. Activate when you need them (small code or config change)
 
@@ -525,6 +526,22 @@ the task requires" but agents sometimes drift. Course-correct early.
 **Q: What if I want a different database / language / hosting?**
 Fork the repo and change `STACK.md`, then edit the affected recipes.
 The contract is written down; change it honestly.
+
+**Q: Which UI design kit should I pick?**
+Two options, both zero-dependency:
+
+- **`devkit`** — modern, dark-first, Vercel/Stripe-style. 156
+  components. Fits SaaS dashboards, devtools, API products.
+- **`neobrutalism`** — bold, thick borders, saturated colors, playful.
+  150+ components. Fits consumer apps, indie tools with personality.
+
+Preview demo pages before deciding:
+[DevKit pages](https://github.com/ashishbishnoi18/ui-design-kits/tree/main/devkit/pages) ·
+[Neobrutalism pages](https://github.com/ashishbishnoi18/ui-design-kits/tree/main/neobrutalism-ui-kit/pages).
+
+Then run `scripts/install-theme.sh <choice>` from the project root.
+See [`RECIPES/70-install-ui-theme.md`](RECIPES/70-install-ui-theme.md)
+for details; you can switch themes later by re-running the script.
 
 **Q: Do I need to understand what `knowledge.db` does?**
 No. It's for the AI's benefit. You can ignore it.

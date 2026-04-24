@@ -37,7 +37,13 @@ Source: https://github.com/ashishbishnoi18/saas-starter (main)
 6. Run `mix setup` and `mix test`. Must be green before any feature
    work. If Postgres isn't reachable, stop and ask me to create the
    role.
-7. Query knowledge.db for existing context:
+7. **Pick a UI design kit.** Ask me which: `devkit` (modern dark) or
+   `neobrutalism` (bold brutalist). Run
+   `scripts/install-theme.sh <choice>` and apply the two edits the
+   script prints (static_paths + root layout). Read
+   `priv/static/themes/<choice>/AGENT.md` for the component class
+   vocabulary before writing templates. See RECIPES/70 for details.
+8. Query knowledge.db for existing context:
       sqlite3 knowledge.db "SELECT name, type FROM components"
       sqlite3 knowledge.db "SELECT domain, rule FROM business_logic"
 
@@ -111,8 +117,11 @@ Phase 3 — Logic port:
   Background jobs via Oban (activate via RECIPES/30-add-oban.md).
 
 Phase 4 — UI:
-  Build the LiveView UI. Mark the old codebase read-only and point
-  traffic at the new app gradually.
+  Ask me which UI design kit to install (`devkit` or `neobrutalism`),
+  run `scripts/install-theme.sh <choice>`, apply the two edits the
+  script prints (see RECIPES/70). Then build the LiveView UI against
+  that kit's component vocabulary. Mark the old codebase read-only
+  and point traffic at the new app gradually.
 
 Phase 5 — Decommission:
   After two weeks of stable operation, retire the old codebase. Log
