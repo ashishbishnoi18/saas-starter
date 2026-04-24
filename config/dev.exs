@@ -1,14 +1,31 @@
 import Config
 
-# Configure your database
-config :saas_starter, SaasStarter.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "saas_starter_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+# Configure your database. Credentials are env-driven with sensible
+# defaults for a vanilla `mix phx.new`-style dev box. Override via env:
+#
+#   PGUSER     — Postgres role (default "postgres")
+#   PGPASSWORD — role password (default "postgres"). Unused with peer
+#                auth (see below).
+#   PGHOST     — host (default "localhost"). If the value starts with
+#                "/" it's treated as a Unix-socket directory and peer
+#                auth is used (Debian/Ubuntu: "/var/run/postgresql").
+pg_host = System.get_env("PGHOST") || "localhost"
+
+pg_conn_opts =
+  if String.starts_with?(pg_host, "/"),
+    do: [socket_dir: pg_host],
+    else: [hostname: pg_host]
+
+config :saas_starter,
+       SaasStarter.Repo,
+       [
+         username: System.get_env("PGUSER") || "postgres",
+         password: System.get_env("PGPASSWORD") || "postgres",
+         database: "saas_starter_dev",
+         stacktrace: true,
+         show_sensitive_data_on_connection_error: true,
+         pool_size: 10
+       ] ++ pg_conn_opts
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

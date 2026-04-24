@@ -1,17 +1,25 @@
 import Config
 
-# Configure your database
-#
-# The MIX_TEST_PARTITION environment variable can be used
-# to provide built-in test partitioning in CI environment.
-# Run `mix help test` for more information.
-config :saas_starter, SaasStarter.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "saas_starter_test#{System.get_env("MIX_TEST_PARTITION")}",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+# Configure your database. Same env-override pattern as config/dev.exs:
+#   PGUSER / PGPASSWORD / PGHOST (defaults match CI's postgres container).
+# A PGHOST starting with "/" is treated as a Unix-socket directory.
+# MIX_TEST_PARTITION enables built-in test partitioning in CI.
+pg_host = System.get_env("PGHOST") || "localhost"
+
+pg_conn_opts =
+  if String.starts_with?(pg_host, "/"),
+    do: [socket_dir: pg_host],
+    else: [hostname: pg_host]
+
+config :saas_starter,
+       SaasStarter.Repo,
+       [
+         username: System.get_env("PGUSER") || "postgres",
+         password: System.get_env("PGPASSWORD") || "postgres",
+         database: "saas_starter_test#{System.get_env("MIX_TEST_PARTITION")}",
+         pool: Ecto.Adapters.SQL.Sandbox,
+         pool_size: System.schedulers_online() * 2
+       ] ++ pg_conn_opts
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
