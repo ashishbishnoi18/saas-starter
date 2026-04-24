@@ -299,8 +299,8 @@ defmodule SaasStarter.AccountsTest do
   end
 
   describe "inspect/2 for the User module" do
-    test "does not include password" do
-      refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    test "does not leak hashed_password even if one is set" do
+      refute inspect(%User{hashed_password: "secret-hash"}) =~ "secret-hash"
     end
   end
 end
