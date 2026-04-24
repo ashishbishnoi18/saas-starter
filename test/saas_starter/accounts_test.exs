@@ -258,7 +258,6 @@ defmodule SaasStarter.AccountsTest do
       # one time use only
       assert {:error, :not_found} = Accounts.login_user_by_magic_link(encoded_token)
     end
-
   end
 
   describe "delete_user_session_token/1" do
