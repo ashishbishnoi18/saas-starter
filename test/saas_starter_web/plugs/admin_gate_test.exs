@@ -43,13 +43,20 @@ defmodule SaasStarterWeb.Plugs.AdminGateTest do
       :ok
     end
 
+    # `log_in_user/2` from ConnCase puts the session token but doesn't
+    # run the UserAuth plug chain, so `current_scope` isn't assigned.
+    # AdminGate expects that assign; fake it directly for these tests.
+    defp with_scope(conn, user) do
+      Plug.Conn.assign(conn, :current_scope, SaasStarter.Accounts.Scope.for_user(user))
+    end
+
     test "404s when request is not from Tailscale", %{conn: conn} do
       user = user_fixture()
       Application.put_env(:saas_starter, :admin_emails, [user.email])
 
       conn =
         conn
-        |> log_in_user(user)
+        |> with_scope(user)
         |> Map.put(:remote_ip, @public_v4)
         |> AdminGate.call([])
 
@@ -73,7 +80,7 @@ defmodule SaasStarterWeb.Plugs.AdminGateTest do
 
       conn =
         conn
-        |> log_in_user(user)
+        |> with_scope(user)
         |> Map.put(:remote_ip, @tailscale_v4)
         |> AdminGate.call([])
 
@@ -87,7 +94,7 @@ defmodule SaasStarterWeb.Plugs.AdminGateTest do
 
       conn =
         conn
-        |> log_in_user(user)
+        |> with_scope(user)
         |> Map.put(:remote_ip, @tailscale_v4)
         |> AdminGate.call([])
 

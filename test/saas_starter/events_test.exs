@@ -8,7 +8,7 @@ defmodule SaasStarter.EventsTest do
 
   describe "track/3" do
     test "inserts a row with nil user_id when user is nil" do
-      assert {:ok, %Event{} = event} = Events.track(nil, "page.view", %{path: "/"})
+      assert {:ok, %Event{} = event} = Events.track(nil, "page.view", %{"path" => "/"})
 
       assert event.event_name == "page.view"
       assert event.user_id == nil

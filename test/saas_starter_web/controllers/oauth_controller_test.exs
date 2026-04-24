@@ -3,6 +3,12 @@ defmodule SaasStarterWeb.OAuthControllerTest do
 
   alias SaasStarter.Accounts
   alias SaasStarter.Repo
+  alias SaasStarterWeb.OAuthController
+
+  # We call the controller action directly rather than hitting the full
+  # /auth/google/callback route. Ueberauth's plug enforces CSRF via a
+  # state cookie that the Phoenix test conn doesn't carry — bypassing
+  # the plug lets us test the app-level callback logic in isolation.
 
   describe "callback/2 with a Google success" do
     test "creates a new user, signs them in, and redirects", %{conn: conn} do
@@ -17,8 +23,10 @@ defmodule SaasStarterWeb.OAuthControllerTest do
       conn =
         conn
         |> init_test_session(%{})
+        |> Plug.Conn.fetch_query_params()
+        |> fetch_flash()
         |> assign(:ueberauth_auth, auth)
-        |> get(~p"/auth/google/callback")
+        |> OAuthController.callback(%{"provider" => "google"})
 
       assert redirected_to(conn) in [~p"/", ~p"/users/settings"]
 
@@ -40,8 +48,10 @@ defmodule SaasStarterWeb.OAuthControllerTest do
       conn =
         conn
         |> init_test_session(%{})
+        |> Plug.Conn.fetch_query_params()
+        |> fetch_flash()
         |> assign(:ueberauth_auth, auth)
-        |> get(~p"/auth/google/callback")
+        |> OAuthController.callback(%{"provider" => "google"})
 
       assert redirected_to(conn)
 
@@ -61,8 +71,10 @@ defmodule SaasStarterWeb.OAuthControllerTest do
       conn =
         conn
         |> init_test_session(%{})
+        |> Plug.Conn.fetch_query_params()
+        |> fetch_flash()
         |> assign(:ueberauth_failure, failure)
-        |> get(~p"/auth/google/callback")
+        |> OAuthController.callback(%{"provider" => "google"})
 
       assert redirected_to(conn) == ~p"/users/log-in"
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "oauth denied"

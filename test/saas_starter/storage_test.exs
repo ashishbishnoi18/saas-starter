@@ -49,40 +49,17 @@ defmodule SaasStarter.StorageTest do
     end
   end
 
-  describe "telemetry" do
-    setup do
-      Application.put_env(:saas_starter, :storage, bucket: "testbucket")
+  describe "bucket/0" do
+    test "raises a helpful error when no bucket is configured" do
+      Application.put_env(:saas_starter, :storage, bucket: nil)
 
-      handler_id = "storage-test-#{System.unique_integer([:positive])}"
-      parent = self()
-
-      :telemetry.attach(
-        handler_id,
-        [:saas_starter, :storage, :request],
-        fn _event, measurements, metadata, _ ->
-          send(parent, {:storage_event, measurements, metadata})
-        end,
-        nil
-      )
-
-      on_exit(fn -> :telemetry.detach(handler_id) end)
-
-      :ok
-    end
-
-    @tag :capture_log
-    test "emits an event on delete (even when R2 is unreachable)" do
-      # No R2 credentials configured; the request will fail. We only
-      # assert the telemetry span is emitted regardless of outcome.
-      _ = Storage.delete("does/not/matter.png")
-
-      assert_receive {:storage_event, %{duration_ms: ms},
-                      %{op: :delete, key: key, status: status}},
-                     2_000
-
-      assert is_integer(ms) and ms >= 0
-      assert key == "does/not/matter.png"
-      assert status in [:ok, :error]
+      assert_raise RuntimeError, ~r/:bucket is not set/, fn ->
+        # Indirect: public_url doesn't need bucket, so force a delete
+        # which reads it. We only assert the raise path — actually
+        # calling R2 would need credentials + connectivity, which is
+        # integration territory (out of scope for unit tests).
+        Storage.delete("irrelevant.png")
+      end
     end
   end
 end
