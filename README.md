@@ -161,6 +161,11 @@ All of these have free tiers that let you start for $0.
 
 ## How to use
 
+> **Shortcut**: paste [`TEMPLATE.md`](TEMPLATE.md) into your AI agent — it
+> contains the full copy-pasteable prompts for both modes below. Or tell
+> the agent "follow TEMPLATE.md from this repo" and it'll fetch and
+> execute it itself.
+
 Two modes. Pick whichever fits.
 
 ### Option A — start a brand-new SaaS
